@@ -58,6 +58,12 @@ npm run package  # builds .ablx for distribution
 
 ---
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=DrYS444/restart-live-button&type=Date)](https://star-history.com/#DrYS444/restart-live-button&Date)
+
+---
+
 ## License
 
 MIT
