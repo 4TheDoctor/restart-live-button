@@ -1,0 +1,7 @@
+{
+    "name": "restart-live-button",
+    "author": "Ettore",
+    "entry": "dist/extension.js",
+    "version": "1.0.0",
+    "minimumApiVersion": "1.0.0"
+}

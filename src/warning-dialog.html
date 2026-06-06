@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Restart Ableton Live</title>
+  <script>
+    function sendResult(action) {
+      const msg = { method: "close_and_send", params: [JSON.stringify({ action })] };
+      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.live) {
+        window.webkit.messageHandlers.live.postMessage(msg);
+      } else if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(msg);
+      }
+    }
+
+    document.addEventListener("keydown", function(e) {
+      if (e.key === "Escape") sendResult("cancel");
+    });
+
+    // The extension injects the unsaved state via URL hash: #unsaved or #saved
+    const unsaved = location.hash === "#unsaved";
+
+    document.addEventListener("DOMContentLoaded", function() {
+      if (unsaved) {
+        document.getElementById("icon").textContent = "⚠️";
+        document.getElementById("title").textContent = "Unsaved Changes Detected";
+        document.getElementById("body").innerHTML =
+          "Your project has <strong>unsaved changes</strong>.<br>" +
+          "If you restart now, those changes will be lost.";
+        document.getElementById("btn-goback").style.display = "inline-block";
+        document.getElementById("btn-restart").className = "btn btn-danger";
+        document.getElementById("btn-restart").textContent = "Restart Anyway";
+      } else {
+        document.getElementById("icon").textContent = "🔄";
+        document.getElementById("title").textContent = "Restart Ableton Live";
+        document.getElementById("body").textContent =
+          "Live will close and reopen. Your saved project will remain intact.";
+        document.getElementById("btn-goback").style.display = "none";
+        document.getElementById("btn-restart").className = "btn btn-safe";
+        document.getElementById("btn-restart").textContent = "Restart";
+      }
+    });
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    button, * { font: inherit; }
+
+    :root {
+      --bg:      hsl(0, 0%, 17%);
+      --border:  hsl(0, 0%, 7%);
+      --text:    hsl(0, 0%, 71%);
+      --text-dim: hsl(0, 0%, 44%);
+      --danger:  hsl(4, 72%, 52%);
+      --safe:    hsl(142, 40%, 38%);
+      --neutral: hsl(0, 0%, 24%);
+    }
+
+    html {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "AbletonSansSmall", -apple-system, sans-serif;
+      font-size: 11.5px;
+      font-weight: 500;
+      -webkit-font-smoothing: antialiased;
+      height: 100%;
+      user-select: none;
+    }
+
+    body {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1em;
+      padding: 1.8em 2em;
+    }
+
+    .icon { font-size: 2.2em; line-height: 1; }
+
+    .title {
+      font-size: 1.25em;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .message {
+      color: var(--text-dim);
+      text-align: center;
+      line-height: 1.55;
+      font-size: 1em;
+    }
+    .message strong { color: hsl(4, 72%, 72%); font-weight: 600; }
+
+    .buttons {
+      display: flex;
+      gap: 0.55em;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      height: 22px;
+      padding: 0 1.2em;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      cursor: pointer;
+      white-space: nowrap;
+      background: var(--neutral);
+      color: var(--text);
+      transition: filter 0.08s;
+    }
+    .btn:hover { filter: brightness(1.25); }
+    .btn:active { filter: brightness(0.9); }
+
+    .btn-safe    { background: var(--safe);   color: hsl(0,0%,92%); border-color: transparent; }
+    .btn-danger  { background: var(--danger); color: hsl(0,0%,96%); border-color: transparent; }
+    .btn-goback  { background: hsl(40, 60%, 32%); color: hsl(0,0%,92%); border-color: transparent; }
+  </style>
+</head>
+<body>
+  <div class="icon" id="icon"></div>
+  <div class="title" id="title"></div>
+  <div class="message" id="body"></div>
+  <div class="buttons">
+    <button class="btn" onclick="sendResult('cancel')">Cancel</button>
+    <button class="btn btn-goback" id="btn-goback" onclick="sendResult('cancel')">Go Back &amp; Save</button>
+    <button class="btn" id="btn-restart" onclick="sendResult('restart')">Restart</button>
+  </div>
+</body>
+</html>
