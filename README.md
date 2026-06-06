@@ -60,7 +60,13 @@ npm run package  # builds .ablx for distribution
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=DrYS444/restart-live-button&type=Date)](https://star-history.com/#DrYS444/restart-live-button&Date)
+<a href="https://www.star-history.com/?type=date&repos=DrYS444%2Frestart-live-button">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=DrYS444/restart-live-button&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=DrYS444/restart-live-button&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=DrYS444/restart-live-button&type=date&legend=top-left" />
+ </picture>
+</a>
 
 ---
 
