@@ -1,6 +1,6 @@
 {
   "name": "restart-live-button",
-  "version": "1.0.1",
+  "version": "1.0.4",
   "main": "dist/extension.js",
   "engines": {
     "node": ">=24.14.1"

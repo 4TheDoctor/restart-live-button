@@ -4,6 +4,7 @@ import { promisify } from "util";
 import warningDialog from "./warning-dialog.html";
 
 const execAsync = promisify(exec);
+const LIVE_SCRIPT_NAME = "Live";
 
 interface LiveAppInfo {
   appPath: string;
@@ -49,55 +50,49 @@ async function getLiveAppInfo(): Promise<LiveAppInfo> {
   return infoFromPath("/Applications/Ableton Live 12 Beta.app");
 }
 
-async function hasUnsavedChanges(appName: string): Promise<boolean> {
-  // Method 1: AXModified via System Events (requires Accessibility permission).
+async function getCurrentProjectPath(): Promise<string | null> {
+  // Live 12.4.5b5 no longer exposes reliable document/path state through
+  // AppleScript or Accessibility. The Indexer log still records the current
+  // project folder, so use that and reopen the newest .als in that folder.
   try {
     const { stdout } = await execAsync(
-      `osascript` +
-      ` -e 'tell application "System Events"'` +
-      ` -e ${shellQuote(`tell process ${JSON.stringify(appName)}`)}` +
-      ` -e 'value of attribute "AXModified" of window 1'` +
-      ` -e 'end tell'` +
-      ` -e 'end tell'`,
+      `/usr/bin/python3 -c ${shellQuote(`
+import glob, os, re
+
+files = glob.glob(os.path.expanduser('~/Library/Preferences/Ableton/Live*/Indexer.txt'))
+files.sort(key=lambda p: os.path.getmtime(p), reverse=True)
+
+for file_path in files:
+    try:
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as handle:
+            text = handle.read()
+    except OSError:
+        continue
+
+    matches = re.findall(r"CurrentProject: '([^']*)'", text)
+    for project_dir in reversed(matches):
+        if not project_dir or not os.path.isdir(project_dir):
+            continue
+
+        als_files = glob.glob(os.path.join(project_dir, '*.als'))
+        if not als_files:
+            continue
+
+        als_files.sort(key=lambda p: os.path.getmtime(p), reverse=True)
+        print(als_files[0])
+        raise SystemExit(0)
+`)}`,
     );
-    if (stdout.trim() === "true" || stdout.trim() === "false") {
-      return stdout.trim() === "true";
-    }
+    const projectPath = stdout.trim();
+    if (projectPath.endsWith(".als")) return projectPath;
   } catch {}
 
-  // Method 2: Standard Cocoa AppleScript dictionary — no Accessibility needed.
-  try {
-    const { stdout } = await execAsync(
-      `osascript -e ${shellQuote(
-        `tell application ${JSON.stringify(appName)} to (count of documents whose modified is true)`,
-      )}`,
-    );
-    return parseInt(stdout.trim(), 10) > 0;
-  } catch {}
-
-  // Can't determine — assume unsaved. A false alarm is better than silent data loss.
-  return true;
-}
-
-async function getCurrentProjectPath(appName: string): Promise<string | null> {
-  // Standard Cocoa NSDocument AppleScript — most document-based apps support this.
-  try {
-    const { stdout } = await execAsync(
-      `osascript -e ${shellQuote(
-        `tell application ${JSON.stringify(appName)} to POSIX path of (path of front document as alias)`,
-      )}`,
-    );
-    const p = stdout.trim();
-    if (p.endsWith(".als")) return p;
-  } catch {}
   return null;
 }
 
 function spawnRestartScript(
   appPath: string,
-  appName: string,
   projectPath: string | null,
-  discardChanges: boolean,
 ): void {
   // Reopen the exact project file if we got its path; otherwise open the app
   // (Live reopens the last project by default anyway).
@@ -106,27 +101,23 @@ function spawnRestartScript(
     ? `open -a ${shellQuote(appPath)} -- ${shellQuote(projectPath)}`
     : `open -- ${shellQuote(appPath)}`;
 
-  // When discarding changes, pass "saving no" so Live doesn't show its own save dialog —
-  // that dialog would block the quit and we'd end up force-killing Live (crash detection fires).
-  // For a clean (saved) project, plain quit is fine.
-  const quitScript = discardChanges
-    ? `tell application ${JSON.stringify(appName)} to quit saving no`
-    : `tell application ${JSON.stringify(appName)} to quit`;
+  const quitCommand = `osascript -e ${shellQuote(`tell application ${JSON.stringify(LIVE_SCRIPT_NAME)} to quit`)} 2>/dev/null || true`;
 
-  // Wait for Live to finish its own shutdown (deletes crash-recovery marker) before reopening.
-  // Only force-kill after 15 s if it never exited on its own.
-  const waitAndKill = [
-    `for _i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do`,
+  // Wait up to 5 minutes for Live to finish its own shutdown before reopening.
+  // Do not force-kill: if Live shows its native unsaved-changes dialog, the user
+  // must stay in control. If they cancel, Live keeps running and this script exits.
+  const waitForQuit = [
+    `for _i in $(seq 1 300); do`,
     `  pgrep -qf ${shellQuote(executablePath)} || break`,
     `  sleep 1`,
     `done`,
-    `pgrep -qf ${shellQuote(executablePath)} && pkill -f ${shellQuote(executablePath)} 2>/dev/null || true`,
+    `pgrep -qf ${shellQuote(executablePath)} && exit 0`,
     `sleep 1`,
   ].join("\n");
 
   const script = [
-    `osascript -e ${shellQuote(quitScript)} 2>/dev/null || true`,
-    waitAndKill,
+    quitCommand,
+    waitForQuit,
     openCmd,
   ].join("\n");
 
@@ -141,17 +132,15 @@ export function activate(activation: ActivationContext) {
   const context = initialize(activation, "1.0.0");
 
   context.commands.registerCommand("restart-live.trigger", async () => {
-    const { appPath, appName } = await getLiveAppInfo();
-
-    // Check save state BEFORE opening our dialog — no polling, single fast query.
-    const unsaved = await hasUnsavedChanges(appName);
+    const { appPath } = await getLiveAppInfo();
+    const projectPath = await getCurrentProjectPath();
 
     // Pass state via URL hash so the same HTML renders the correct variant.
-    const url = `data:text/html,${encodeURIComponent(warningDialog)}${unsaved ? "#unsaved" : "#saved"}`;
+    const url = `data:text/html,${encodeURIComponent(warningDialog)}#restart`;
 
     let result: string;
     try {
-      result = await context.ui.showModalDialog(url, 460, unsaved ? 230 : 200);
+      result = await context.ui.showModalDialog(url, 520, 220);
     } catch {
       return;
     }
@@ -160,19 +149,27 @@ export function activate(activation: ActivationContext) {
 
     if (action === "cancel") return;
 
-    // "Go Back & Save" also sends "cancel" — the user saves manually, then re-triggers.
-    // No automated save attempt here: avoids any risk of crashing while Live's
-    // native save dialog is open.
-
     try {
-      const projectPath = await getCurrentProjectPath(appName);
-      spawnRestartScript(appPath, appName, projectPath, unsaved);
+      spawnRestartScript(appPath, projectPath);
     } catch (e) {
       console.error("Failed to restart:", e);
     }
   });
 
-  (["MidiTrack", "AudioTrack", "Scene"] as const).forEach((scope) => {
+  ([
+    "MidiTrack",
+    "AudioTrack",
+    "Scene",
+    "MidiClip",
+    "AudioClip",
+    "ClipSlot",
+    "ClipSlotSelection",
+    "MidiTrack.ArrangementSelection",
+    "AudioTrack.ArrangementSelection",
+    "Sample",
+    "Simpler",
+    "DrumRack",
+  ] as const).forEach((scope) => {
     context.ui.registerContextMenuAction(scope, "Restart Ableton Live…", "restart-live.trigger");
   });
 }
