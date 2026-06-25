@@ -1,7 +1,7 @@
 # Restart Live Button
 
 [![GitHub stars](https://img.shields.io/github/stars/DrYS444/restart-live-button?style=social)](https://github.com/DrYS444/restart-live-button/stargazers)
-[![Version](https://img.shields.io/badge/version-1.0.0-orange)](https://github.com/DrYS444/restart-live-button/releases)
+[![Version](https://img.shields.io/badge/version-1.0.1-orange)](https://github.com/DrYS444/restart-live-button/releases)
 [![Ableton Live](https://img.shields.io/badge/Ableton_Live-12_Beta-black)](https://www.ableton.com)
 
 Restart Ableton Live from a right-click menu — with smart unsaved changes detection.
@@ -17,12 +17,13 @@ Right-click any **track** or **scene** → **Restart Ableton Live…**
 - If your project has **unsaved changes** → shows a warning with "Go Back & Save" and "Restart Anyway"
 - If your project is **already saved** → simple confirmation, then restarts
 - Automatically reopens the correct Live version (works if you have multiple versions installed)
+- v1.0.1 improves restart reliability by letting Live quit cleanly before reopening
 
 ---
 
 ## Install
 
-1. Download `restart-live-button-1.0.0.ablx` from [Releases](https://github.com/DrYS444/restart-live-button/releases)
+1. Download `restart-live-button-1.0.1.ablx` from [Releases](https://github.com/DrYS444/restart-live-button/releases)
 2. Open Ableton Live 12 Beta
 3. Go to **Preferences → Extensions**
 4. Drag the `.ablx` file into the Extensions list

@@ -1,8 +1,10 @@
 {
   "name": "restart-live-button",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "dist/extension.js",
-  "engines": { "node": ">=24.14.1" },
+  "engines": {
+    "node": ">=24.14.1"
+  },
   "type": "module",
   "scripts": {
     "build": "tsc --noEmit && tsx build.ts --production",
