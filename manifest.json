@@ -1,6 +1,6 @@
 {
-    "name": "restart-live-button",
-    "author": "Ettore",
+    "name": "restart-ableton-live",
+    "author": "The Doctor",
     "entry": "dist/extension.js",
     "version": "1.0.4",
     "minimumApiVersion": "1.0.0"

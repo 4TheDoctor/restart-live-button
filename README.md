@@ -4,8 +4,8 @@
 
 **Restart Live without ever leaving Live.**
 
-[![GitHub stars](https://img.shields.io/github/stars/4TheDoctor/restart-live-button?style=social)](https://github.com/4TheDoctor/restart-live-button/stargazers)
-[![Version](https://img.shields.io/badge/version-1.0.4-orange)](https://github.com/4TheDoctor/restart-live-button/releases)
+[![GitHub stars](https://img.shields.io/github/stars/4TheDoctor/restart-ableton-live?style=social)](https://github.com/4TheDoctor/restart-ableton-live/stargazers)
+[![Version](https://img.shields.io/badge/version-1.0.4-orange)](https://github.com/4TheDoctor/restart-ableton-live/releases)
 [![Ableton Live](https://img.shields.io/badge/Ableton_Live-12_Beta-black)](https://www.ableton.com)
 [![License](https://img.shields.io/badge/license-MIT-blue)](#license)
 
@@ -30,7 +30,7 @@ Right-click a track, clip, scene, clip slot, or Arrangement selection → **Rest
 
 ## 📦 Install
 
-1. Download `restart-live-button-1.0.4.ablx` from [Releases](https://github.com/4TheDoctor/restart-live-button/releases)
+1. Download `restart-ableton-live-1.0.4.ablx` from [Releases](https://github.com/4TheDoctor/restart-ableton-live/releases)
 2. Open Ableton Live 12 Beta
 3. Go to **Preferences → Extensions**
 4. Drag the `.ablx` file into the Extensions list
@@ -52,8 +52,8 @@ Done. Right-click anywhere in Live to use it.
 ## 🛠️ Build from source
 
 ```sh
-git clone https://github.com/4TheDoctor/restart-live-button.git
-cd restart-live-button
+git clone https://github.com/4TheDoctor/restart-ableton-live.git
+cd restart-ableton-live
 npm install
 ```
 
@@ -71,11 +71,11 @@ npm run package  # builds .ablx for distribution
 
 ## ⭐ Star History
 
-<a href="https://www.star-history.com/?type=date&repos=4TheDoctor%2Frestart-live-button">
+<a href="https://www.star-history.com/?type=date&repos=4TheDoctor%2Frestart-ableton-live">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=4TheDoctor/restart-live-button&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=4TheDoctor/restart-live-button&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=4TheDoctor/restart-live-button&type=date&legend=top-left" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=4TheDoctor/restart-ableton-live&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=4TheDoctor/restart-ableton-live&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=4TheDoctor/restart-ableton-live&type=date&legend=top-left" />
  </picture>
 </a>
 
@@ -83,4 +83,4 @@ npm run package  # builds .ablx for distribution
 
 ## 📄 License
 
-MIT © [4TheDoctor](https://github.com/4TheDoctor)
+MIT © [The Doctor](https://github.com/4TheDoctor)
