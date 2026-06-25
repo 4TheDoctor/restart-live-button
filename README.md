@@ -1,25 +1,34 @@
-# Restart Live Button
+<div align="center">
+
+# 🔄 Restart Live Button
+
+**Restart Ableton Live without ever leaving Live.**
 
 [![GitHub stars](https://img.shields.io/github/stars/4TheDoctor/restart-live-button?style=social)](https://github.com/4TheDoctor/restart-live-button/stargazers)
 [![Version](https://img.shields.io/badge/version-1.0.4-orange)](https://github.com/4TheDoctor/restart-live-button/releases)
 [![Ableton Live](https://img.shields.io/badge/Ableton_Live-12_Beta-black)](https://www.ableton.com)
+[![License](https://img.shields.io/badge/license-MIT-blue)](#license)
 
-Restart Ableton Live from Live's right-click menus.
+<img src="assets/restart-dialog.png" alt="Restart Ableton Live confirmation dialog" width="640" />
+
+</div>
 
 ---
 
-## What it does
+## ✨ What it does
 
 Right-click a track, clip, scene, clip slot, or Arrangement selection → **Restart Ableton Live…**
 
-- Shows a simple restart confirmation
-- If your project has unsaved changes, Live shows its native save dialog
-- Reopens the current project when possible
-- Uses the same Live app version that launched the extension
+| | |
+|---|---|
+| 🪟 **One-click confirm** | A clean restart dialog, no terminal, no Activity Monitor |
+| 💾 **Safe by default** | Unsaved changes? Live shows its native save dialog first |
+| 📂 **Picks up where you left off** | Reopens the current project when possible |
+| 🎯 **Version-aware** | Uses the same Live app version that launched the extension |
 
 ---
 
-## Install
+## 📦 Install
 
 1. Download `restart-live-button-1.0.4.ablx` from [Releases](https://github.com/4TheDoctor/restart-live-button/releases)
 2. Open Ableton Live 12 Beta
@@ -27,20 +36,20 @@ Right-click a track, clip, scene, clip slot, or Arrangement selection → **Rest
 4. Drag the `.ablx` file into the Extensions list
 5. Restart Ableton Live when Live asks you to. Yes, seriously.
 
-Take a breath. Enjoy the ritual. This should be the last time you have to restart Live manually.
+> Take a breath. Enjoy the ritual. This should be the last time you ever restart Live manually.
 
-Done. Right-click in Live to use it.
-
----
-
-## Requirements
-
-- **Ableton Live 12 Beta** (Extensions API is currently in beta)
-- macOS (the restart logic uses AppleScript + `open`)
+Done. Right-click anywhere in Live to use it.
 
 ---
 
-## Build from source
+## ✅ Requirements
+
+- **Ableton Live 12 Beta** — the Extensions API is currently in beta
+- **macOS** — the restart logic uses AppleScript + `open`
+
+---
+
+## 🛠️ Build from source
 
 ```sh
 git clone https://github.com/4TheDoctor/restart-live-button.git
@@ -60,7 +69,7 @@ npm run package  # builds .ablx for distribution
 
 ---
 
-## Star History
+## ⭐ Star History
 
 <a href="https://www.star-history.com/?type=date&repos=4TheDoctor%2Frestart-live-button">
  <picture>
@@ -72,6 +81,6 @@ npm run package  # builds .ablx for distribution
 
 ---
 
-## License
+## 📄 License
 
-MIT
+MIT © [4TheDoctor](https://github.com/4TheDoctor)
