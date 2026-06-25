@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🔄 Restart Live Button
+# 🔄 Restart Ableton Live
 
-**Restart Ableton Live without ever leaving Live.**
+**Restart Live without ever leaving Live.**
 
 [![GitHub stars](https://img.shields.io/github/stars/4TheDoctor/restart-live-button?style=social)](https://github.com/4TheDoctor/restart-live-button/stargazers)
 [![Version](https://img.shields.io/badge/version-1.0.4-orange)](https://github.com/4TheDoctor/restart-live-button/releases)
