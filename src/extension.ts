@@ -52,14 +52,17 @@ async function getLiveAppInfo(): Promise<LiveAppInfo> {
 
 async function getCurrentProjectPath(): Promise<string | null> {
   // Live 12.4.5b5 no longer exposes reliable document/path state through
-  // AppleScript or Accessibility. The Indexer log still records the current
-  // project folder, so use that and reopen the newest .als in that folder.
+  // AppleScript or Accessibility. Live's Log.txt records every real document
+  // load as: info: Loading document "<absolute path>.als". That line fires
+  // only when Live actually opens a Set, so the last one is the front document.
+  // (The Indexer log's CurrentProject is unreliable: it also records temp
+  // recording projects, re-index events, and our own restarts.)
   try {
     const { stdout } = await execAsync(
       `/usr/bin/python3 -c ${shellQuote(`
 import glob, os, re
 
-files = glob.glob(os.path.expanduser('~/Library/Preferences/Ableton/Live*/Indexer.txt'))
+files = glob.glob(os.path.expanduser('~/Library/Preferences/Ableton/Live*/Log.txt'))
 files.sort(key=lambda p: os.path.getmtime(p), reverse=True)
 
 for file_path in files:
@@ -69,18 +72,19 @@ for file_path in files:
     except OSError:
         continue
 
-    matches = re.findall(r"CurrentProject: '([^']*)'", text)
-    for project_dir in reversed(matches):
-        if not project_dir or not os.path.isdir(project_dir):
+    matches = re.findall(r'Loading document "([^"]+\\.als)"', text)
+    for als in reversed(matches):
+        # Skip Live's bundled default/template Sets (a blank, unsaved session).
+        if '.app/Contents/' in als:
             continue
+        if os.path.isfile(als):
+            print(als)
+            raise SystemExit(0)
 
-        als_files = glob.glob(os.path.join(project_dir, '*.als'))
-        if not als_files:
-            continue
-
-        als_files.sort(key=lambda p: os.path.getmtime(p), reverse=True)
-        print(als_files[0])
-        raise SystemExit(0)
+    # Only the newest readable log reflects the running instance; if it holds
+    # no real project, fall through to opening the app (Live restores the last
+    # Set itself) instead of trusting an older version's stale log.
+    raise SystemExit(0)
 `)}`,
     );
     const projectPath = stdout.trim();
