@@ -1,5 +1,7 @@
 import { initialize, type ActivationContext } from "@ableton-extensions/sdk";
 import { exec, spawn } from "child_process";
+import { existsSync, readdirSync, readFileSync, statSync } from "fs";
+import { join } from "path";
 import { promisify } from "util";
 import warningDialog from "./warning-dialog.html";
 
@@ -11,11 +13,13 @@ interface LiveAppInfo {
   appName: string;
 }
 
+// ── macOS ─────────────────────────────────────────────────────────────────────
+
 function shellQuote(value: string): string {
   return `'${value.replace(/'/g, `'\\''`)}'`;
 }
 
-async function getLiveAppInfo(): Promise<LiveAppInfo> {
+async function getLiveAppInfoDarwin(): Promise<LiveAppInfo> {
   function infoFromPath(appPath: string): LiveAppInfo {
     const appName = appPath.split("/").pop()!.replace(/\.app$/, "");
     return { appPath, appName };
@@ -28,7 +32,7 @@ async function getLiveAppInfo(): Promise<LiveAppInfo> {
     if (m?.[1]) return infoFromPath(m[1]);
   }
 
-  // 2. Production: Live spawns the Extension Host, so the grandparent process IS Live.
+  // 2. Production: Live spawns the Extension Host, so the parent process IS Live.
   try {
     const myPid = process.pid;
     const { stdout: ppidOut } = await execAsync(`ps -p ${myPid} -o ppid= 2>/dev/null`);
@@ -50,7 +54,7 @@ async function getLiveAppInfo(): Promise<LiveAppInfo> {
   return infoFromPath("/Applications/Ableton Live 12 Beta.app");
 }
 
-async function getCurrentProjectPath(): Promise<string | null> {
+async function getCurrentProjectPathDarwin(): Promise<string | null> {
   // Live 12.4.5b5 no longer exposes reliable document/path state through
   // AppleScript or Accessibility. Live's Log.txt records every real document
   // load as: info: Loading document "<absolute path>.als". That line fires
@@ -94,10 +98,7 @@ for file_path in files:
   return null;
 }
 
-function spawnRestartScript(
-  appPath: string,
-  projectPath: string | null,
-): void {
+function spawnRestartScriptDarwin(appPath: string, projectPath: string | null): void {
   // Reopen the exact project file if we got its path; otherwise open the app
   // (Live reopens the last project by default anyway).
   const executablePath = `${appPath}/Contents/MacOS/Live`;
@@ -119,11 +120,7 @@ function spawnRestartScript(
     `sleep 1`,
   ].join("\n");
 
-  const script = [
-    quitCommand,
-    waitForQuit,
-    openCmd,
-  ].join("\n");
+  const script = [quitCommand, waitForQuit, openCmd].join("\n");
 
   const child = spawn("bash", ["-c", script], {
     detached: true,
@@ -131,6 +128,136 @@ function spawnRestartScript(
   });
   child.unref();
 }
+
+// ── Windows ───────────────────────────────────────────────────────────────────
+
+async function getLiveAppInfoWindows(): Promise<LiveAppInfo> {
+  function infoFromPath(exePath: string): LiveAppInfo {
+    const appName = exePath.split(/[\\/]/).pop()!.replace(/\.exe$/i, "");
+    return { appPath: exePath, appName };
+  }
+
+  // 1. Production: Live spawns the Extension Host, so the parent process IS Live.
+  try {
+    const myPid = process.pid;
+    const { stdout } = await execAsync(
+      `powershell -NoProfile -Command "$p=(Get-CimInstance Win32_Process -Filter 'ProcessId=${myPid}').ParentProcessId; (Get-CimInstance Win32_Process -Filter \\"ProcessId=$p\\").ExecutablePath"`,
+    );
+    const exePath = stdout.trim();
+    if (exePath && /ableton/i.test(exePath)) return infoFromPath(exePath);
+  } catch {}
+
+  // 2. Find any running Live process.
+  try {
+    const { stdout } = await execAsync(
+      `powershell -NoProfile -Command "Get-Process | Where-Object {$_.Name -like 'Ableton*'} | Select-Object -First 1 -ExpandProperty Path"`,
+    );
+    const exePath = stdout.trim();
+    if (exePath) return infoFromPath(exePath);
+  } catch {}
+
+  return infoFromPath(
+    "C:\\ProgramData\\Ableton\\Live 12 Beta\\Program\\Ableton Live 12 Beta.exe",
+  );
+}
+
+function getCurrentProjectPathWindows(): string | null {
+  // Mirrors the macOS strategy: read Live's Log.txt and find the last
+  // "Loading document" line that points to an existing .als file.
+  // %APPDATA%\Ableton\Live*\Preferences\Log.txt on Windows.
+  try {
+    const appData = process.env["APPDATA"];
+    if (!appData) return null;
+
+    const abletonDir = join(appData, "Ableton");
+    const logFiles: { path: string; mtime: number }[] = [];
+
+    const entries = readdirSync(abletonDir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isDirectory() || !entry.name.startsWith("Live")) continue;
+      const logPath = join(abletonDir, entry.name, "Preferences", "Log.txt");
+      try {
+        const { mtimeMs } = statSync(logPath);
+        logFiles.push({ path: logPath, mtime: mtimeMs });
+      } catch {}
+    }
+
+    logFiles.sort((a, b) => b.mtime - a.mtime);
+
+    for (const { path: logPath } of logFiles) {
+      try {
+        const text = readFileSync(logPath, "utf-8");
+        const matches = [...text.matchAll(/Loading document "([^"]+\.als)"/g)];
+        for (let i = matches.length - 1; i >= 0; i--) {
+          const als = matches[i][1];
+          if (existsSync(als)) return als;
+        }
+      } catch {}
+      // Only the newest log reflects the running instance.
+      break;
+    }
+  } catch {}
+
+  return null;
+}
+
+function spawnRestartScriptWindows(appPath: string, projectPath: string | null): void {
+  // Single-quote escape for PowerShell string literals.
+  const ps = (s: string) => s.replace(/'/g, "''");
+
+  const openLine = projectPath
+    ? `Start-Process '${ps(appPath)}' -ArgumentList '${ps(projectPath)}'`
+    : `Start-Process '${ps(appPath)}'`;
+
+  // CloseMainWindow() sends WM_CLOSE, which lets Live show its native
+  // unsaved-changes dialog. If the user cancels, Live keeps running and
+  // the script exits without reopening. Never force-kill.
+  const script = `
+$target = '${ps(appPath)}'
+$proc = Get-Process | Where-Object { try { $_.Path -eq $target } catch { $false } } | Select-Object -First 1
+if ($proc) { $proc.CloseMainWindow() | Out-Null }
+$i = 0
+while ($i -lt 300) {
+  if (-not (Get-Process | Where-Object { try { $_.Path -eq $target } catch { $false } })) { break }
+  Start-Sleep -Seconds 1
+  $i++
+}
+if (Get-Process | Where-Object { try { $_.Path -eq $target } catch { $false } }) { exit 0 }
+Start-Sleep -Seconds 1
+${openLine}
+`;
+
+  // Use -EncodedCommand (base64 UTF-16LE) to avoid all command-line quoting issues.
+  const encoded = Buffer.from(script, "utf16le").toString("base64");
+  const child = spawn(
+    "powershell",
+    ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-EncodedCommand", encoded],
+    { detached: true, stdio: "ignore" },
+  );
+  child.unref();
+}
+
+// ── Platform dispatch ─────────────────────────────────────────────────────────
+
+async function getLiveAppInfo(): Promise<LiveAppInfo> {
+  if (process.platform === "win32") return getLiveAppInfoWindows();
+  return getLiveAppInfoDarwin();
+}
+
+async function getCurrentProjectPath(): Promise<string | null> {
+  if (process.platform === "win32") return getCurrentProjectPathWindows();
+  return getCurrentProjectPathDarwin();
+}
+
+function spawnRestartScript(appPath: string, projectPath: string | null): void {
+  if (process.platform === "win32") {
+    spawnRestartScriptWindows(appPath, projectPath);
+  } else {
+    spawnRestartScriptDarwin(appPath, projectPath);
+  }
+}
+
+// ── Extension entry point ─────────────────────────────────────────────────────
 
 export function activate(activation: ActivationContext) {
   const context = initialize(activation, "1.0.0");

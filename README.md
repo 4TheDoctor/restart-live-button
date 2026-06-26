@@ -5,7 +5,7 @@
 **Restart Live without ever leaving Live.**
 
 [![GitHub stars](https://img.shields.io/github/stars/4TheDoctor/restart-ableton-live?style=social)](https://github.com/4TheDoctor/restart-ableton-live/stargazers)
-[![Version](https://img.shields.io/badge/version-1.0.4-orange)](https://github.com/4TheDoctor/restart-ableton-live/releases)
+[![Version](https://img.shields.io/badge/version-1.1.0-orange)](https://github.com/4TheDoctor/restart-ableton-live/releases)
 [![Ableton Live](https://img.shields.io/badge/Ableton_Live-12_Beta-black)](https://www.ableton.com)
 [![License](https://img.shields.io/badge/license-MIT-blue)](#license)
 
@@ -30,7 +30,7 @@ Right-click a track, clip, scene, clip slot, or Arrangement selection → **Rest
 
 ## 📦 Install
 
-1. Download `restart-ableton-live-1.0.4.ablx` from [Releases](https://github.com/4TheDoctor/restart-ableton-live/releases)
+1. Download `restart-ableton-live-1.1.0.ablx` from [Releases](https://github.com/4TheDoctor/restart-ableton-live/releases)
 2. Open Ableton Live 12 Beta
 3. Go to **Preferences → Extensions**
 4. Drag the `.ablx` file into the Extensions list
@@ -45,7 +45,8 @@ Done. Right-click anywhere in Live to use it.
 ## ✅ Requirements
 
 - **Ableton Live 12 Beta** — the Extensions API is currently in beta
-- **macOS** — the restart logic uses AppleScript + `open`
+- **macOS** — uses AppleScript + `open` to quit and reopen Live
+- **Windows** — uses PowerShell + `CloseMainWindow()` to quit and reopen Live
 
 ---
 
